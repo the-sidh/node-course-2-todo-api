@@ -9,6 +9,13 @@ var app = express();
 
 app.use(bodyParser.json());
 
+app.get('/todo', (req,res)=>{
+    Todo.find().then((todos)=>{
+        res.status(200).send({todos});
+    });
+   
+});
+
 app.post('/todo', (req, res) => {
     var newTodo = new Todo({
         text: req.body.text
