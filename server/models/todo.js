@@ -3,7 +3,7 @@ var mongoose = require('mongoose');
 
 
 var Todo = mongoose.model('Todo', {
-    text: String,
+    text: {type: String, minlength:1,required:true},
     completed: Boolean,
     completedAt: Number
 });
