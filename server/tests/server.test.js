@@ -5,15 +5,50 @@ var { app } = require('../server');
 var { Todo } = require('../models/todo');
 const { ObjectId } = require('mongodb').ObjectId;
 
-var todos = [{ text: 'Fazer 1', _id: new ObjectId }, { text: 'Fazer 2', _id: new ObjectId }]
+var todos = [
+    {
+        text: 'Fazer 1',
+        _id: new ObjectId
+    },
+
+    {
+        text: 'Fazer 2',
+        _id: new ObjectId,
+        completed: true,
+        completedAt: 333
+    }];
 
 beforeEach((done) => {
     Todo.remove({}).then(() => { return Todo.insertMany(todos) }).then(() => done());
 });
 
-describe ('DELETE /todo:id',()=>{
-    it('should deleteta a todo',(done)=>{
-        request(app).delete(`/todo/${todos[0]._id}`).expect(200).expect((res)=>{
+describe('PATCH /todo:id', () => {
+    it('should update an item', (done) => {
+        var id = todos[0]._id;
+        todos[0].text = 'updated';
+        todos[0].completed = true;
+        request(app).patch(`/todo/${id}`).expect(200).expect((res) => {
+            expect(res.body.todo.text).toBe('updated').
+            expect(res.body.todo.completed).toBe(true).
+            expect(res.body.todo.completedAt).toBeA('number');
+        });
+        done();
+    });
+
+    it('should clear completedAt when completed equals false', (done) => {
+        var id = todos[1]._id;
+        todos[1].completed = false;
+        request(app).patch(`/todo/${id}`).expect(200).expect((res) => {
+            expect(res.body.todo.completed).toBe(false).
+            expect(res.body.todo.completedAt).toNotExist();
+        });
+        done();
+    });
+});
+
+describe('DELETE /todo:id', () => {
+    it('should deleteta a todo', (done) => {
+        request(app).delete(`/todo/${todos[0]._id}`).expect(200).expect((res) => {
             expect(res.body.todo.text).toBe('Fazer 1');
         });
         done();
