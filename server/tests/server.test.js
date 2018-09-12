@@ -11,6 +11,15 @@ beforeEach((done) => {
     Todo.remove({}).then(() => { return Todo.insertMany(todos) }).then(() => done());
 });
 
+describe ('DELETE /todo:id',()=>{
+    it('should deleteta a todo',(done)=>{
+        request(app).delete(`/todo/${todos[0]._id}`).expect(200).expect((res)=>{
+            expect(res.body.todo.text).toBe('Fazer 1');
+        });
+        done();
+    });
+});
+
 describe('GET /todo:id', () => {
     it('should return a todo', (done) => {
         request(app).get(`/todo/${todos[0]._id}`).

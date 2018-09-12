@@ -1,5 +1,6 @@
-var express = require('express');
-var bodyParser = require('body-parser');
+const _ = require('lodash');
+const express = require('express');
+const bodyParser = require('body-parser');
 
 var { ObjectId } = require('mongodb').ObjectId;
 var { mongoose } = require('./db/mongoose');
@@ -44,19 +45,48 @@ app.get('/user/:id', (req, res) => {
     }
 });
 
+app.patch('/todo/:id', (req, res) => {
+    var id = req.params.id;
+    var body = _.pick(req.body, ['text', 'completed']);
+    if (ObjectId.isValid(id)) {
+        if (_.isBoolean(body.completed) && body.completed) {
+            body.completedAt = new Date().getTime();
+        } else {
+            body.completed = false;
+            body.completedAt = null;
+        }
+
+        Todo.findByIdAndUpdate(id, { $set:  body  }, { new: true }).
+        then((doc) => {
+            if(doc){
+                res.status(200).send(doc);
+            }else{
+                res.status(200).send('empty');
+            }
+         
+        }, (err) => {
+            res.status(400).send(err);
+        });
+
+    } else {
+        res.status(400).send('invalid id');
+    }
+
+});
+
 app.get('/todo', (req, res) => {
     var param;
     if (req.query.text) {
         param = req.query.text;
-        Todo.findOne({text: param}).then((todo) => {
+        Todo.findOne({ text: param }).then((todo) => {
             res.status(200).send({ todo });
         });
     } else if (req.query.done) {
         param = req.query.done;
-        Todo.findOne({done: param}).then((todo) => {
+        Todo.findOne({ done: param }).then((todo) => {
             res.status(200).send({ todo });
         });
-    } else{
+    } else {
         Todo.find().then((todos) => {
             res.status(200).send({ todos });
         });
@@ -86,7 +116,7 @@ app.delete('/todo/:id', (req, res) => {
     if (ObjectId.isValid(id)) {
         Todo.findByIdAndRemove(id).then((todo) => {
             if (todo) {
-                res.status(200).send(`removed ${ todo }`);
+                res.status(200).send(`removed ${todo}`);
             } else {
                 res.status(200).send('empty');
             }
