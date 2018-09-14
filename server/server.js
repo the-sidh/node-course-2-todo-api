@@ -11,6 +11,7 @@ if (env === 'development') {
 const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
+const bcrypt = require('bcryptjs');
 
 var { ObjectId } = require('mongodb').ObjectId;
 var { mongoose } = require('./db/mongoose');
