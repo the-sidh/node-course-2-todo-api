@@ -1,11 +1,11 @@
 var env = process.env.NODE_ENV || 'development';
 
-if(env ==='development'){
-    process.env.PORT=3000;
-    process.env.MONGODB_URI= 'mongodb://localhost:27017/TodoApp';
-}else if(env ==='test'){
-    process.env.PORT=3000;
-    process.env.MONGODB_URI= 'mongodb://localhost:27017/TodoAppTest'
+if (env === 'development') {
+    process.env.PORT = 3000;
+    process.env.MONGODB_URI = 'mongodb://localhost:27017/TodoApp';
+} else if (env === 'test') {
+    process.env.PORT = 3000;
+    process.env.MONGODB_URI = 'mongodb://localhost:27017/TodoAppTest'
 }
 
 const _ = require('lodash');
@@ -16,6 +16,7 @@ var { ObjectId } = require('mongodb').ObjectId;
 var { mongoose } = require('./db/mongoose');
 var { User } = require('./models/user');
 var { Todo } = require('./models/todo');
+var {authenticate} = require('./middleware/authenticate');
 
 var app = express();
 
@@ -23,37 +24,7 @@ var port = process.env.PORT;
 
 app.use(bodyParser.json());
 
-app.get('/user', (req, res) => {
-    if (req.query.email) {
-        console.log(req.query.email);
-        User.findOne({ email: req.query.email }).then((user) => {
-            res.status(200).send({ user });
-        });
-    }
-    else {
-        User.find().then((users) => {
-            res.status(200).send({ users });
-        });
 
-    }
-
-});
-
-app.get('/user/:id', (req, res) => {
-    var id = req.params.id;
-    if (ObjectId.isValid(id)) {
-
-        User.findById(id).then((users) => {
-            if (users) {
-                res.status(200).send({ users });
-            } else {
-                res.status(200).send('empty');
-            }
-        });
-    } else {
-        res.status(400).send('invalid id');
-    }
-});
 
 app.patch('/todo/:id', (req, res) => {
     var id = req.params.id;
@@ -66,17 +37,17 @@ app.patch('/todo/:id', (req, res) => {
             body.completedAt = null;
         }
 
-        Todo.findByIdAndUpdate(id, { $set:  body  }, { new: true }).
-        then((doc) => {
-            if(doc){
-                res.status(200).send(doc);
-            }else{
-                res.status(200).send('empty');
-            }
-         
-        }, (err) => {
-            res.status(400).send(err);
-        });
+        Todo.findByIdAndUpdate(id, { $set: body }, { new: true }).
+            then((doc) => {
+                if (doc) {
+                    res.status(200).send(doc);
+                } else {
+                    res.status(200).send('empty');
+                }
+
+            }, (err) => {
+                res.status(400).send(err);
+            });
 
     } else {
         res.status(400).send('invalid id');
@@ -148,6 +119,65 @@ app.post('/todo', (req, res) => {
 
 })
 
+
+app.get('/user', (req, res) => {
+    if (req.query.email) {
+        console.log(req.query.email);
+        User.findOne({ email: req.query.email }).then((user) => {
+            res.status(200).send({ user });
+        });
+    }
+    else {
+        User.find().then((users) => {
+            res.status(200).send({ users });
+        });
+
+    }
+
+});
+
+
+
+app.get('/user/me/', authenticate, (req, res) => {
+
+    res.send(req.user)
+
+});
+
+
+app.get('/user/:id', (req, res) => {
+    var id = req.params.id;
+    if (ObjectId.isValid(id)) {
+
+        User.findById(id).then((users) => {
+            if (users) {
+                res.status(200).send({ users });
+            } else {
+                res.status(200).send('empty');
+            }
+        });
+    } else {
+        res.status(400).send('invalid id');
+    }
+});
+
+app.post('/user', (req, res) => {
+    var body = _.pick(req.body, ['email', 'password']);
+    var user = new User({
+        email: body.email,
+        password: body.password,
+    });
+
+    user.save().then(() => {
+        return user.generateAuthToken();
+    }).then((token) => {
+        res.header('x-auth', token).send(user)
+    }).catch((err) => {
+        res.status(400).send(err)
+    });
+});
+
+
 app.listen(port);
 
-module.exports = { mongoose, app };
+module.exports = { mongoose, app }; ''
