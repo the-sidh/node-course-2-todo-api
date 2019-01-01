@@ -17,7 +17,7 @@ var { ObjectId } = require('mongodb').ObjectId;
 var { mongoose } = require('./db/mongoose');
 var { User } = require('./models/user');
 var { Todo } = require('./models/todo');
-var {authenticate} = require('./middleware/authenticate');
+var { authenticate } = require('./middleware/authenticate');
 
 var app = express();
 
@@ -140,9 +140,7 @@ app.get('/user', (req, res) => {
 
 
 app.get('/user/me/', authenticate, (req, res) => {
-
     res.send(req.user)
-
 });
 
 
@@ -161,6 +159,22 @@ app.get('/user/:id', (req, res) => {
         res.status(400).send('invalid id');
     }
 });
+
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
+
+app.post('/user/login', (req, res) => {
+    var body = _.pick(req.body, ['email', 'password']);
+    User.findByCredentials(body.email, body.password).then((user) => {
+        return user.generateAuthToken();
+    }).then((token) => {
+        res.header('x-auth', token).send(user)
+    }).catch((err) => {
+        res.status(400).send(err)
+    });
+});
+
 
 app.post('/user', (req, res) => {
     var body = _.pick(req.body, ['email', 'password']);
@@ -181,4 +195,4 @@ app.post('/user', (req, res) => {
 
 app.listen(port);
 
-module.exports = { mongoose, app }; ''
+module.exports = { mongoose, app }; 

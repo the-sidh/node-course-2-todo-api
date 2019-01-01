@@ -1,14 +1,20 @@
 
 var mongoose = require('mongoose');
 
-
-var Todo = mongoose.model('Todo', {
-    text: {type: String, minlength:1,required:true},
+var todoSchema = new mongoose.Schema({
+    text: { type: String, minlength: 1, required: true },
     completed: Boolean,
     completedAt: Number
 });
 
-module.exports={Todo};
+todoSchema.pre('save',function(next){
+    console.log('dddd');
+    next();
+});
+
+var Todo = mongoose.model('Todo', todoSchema);
+
+module.exports = { Todo };
 
 
 // var newTodo = new Todo({

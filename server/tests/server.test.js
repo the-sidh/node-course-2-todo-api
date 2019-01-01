@@ -3,24 +3,13 @@ const expect = require('expect');
 var mongoose = require('../server').mongoose;
 var { app } = require('../server');
 var { Todo } = require('../models/todo');
+var {User} = require('./../models/user');
 const { ObjectId } = require('mongodb').ObjectId;
+const { todos, populateTodos, users, populateUsers } = require('./seed/seed.js');
 
-var todos = [
-    {
-        text: 'Fazer 1',
-        _id: new ObjectId
-    },
 
-    {
-        text: 'Fazer 2',
-        _id: new ObjectId,
-        completed: true,
-        completedAt: 333
-    }];
-
-beforeEach((done) => {
-    Todo.remove({}).then(() => { return Todo.insertMany(todos) }).then(() => done());
-});
+beforeEach(populateTodos);
+beforeEach(populateUsers);
 
 describe('PATCH /todo:id', () => {
     it('should update an item', (done) => {
@@ -29,8 +18,8 @@ describe('PATCH /todo:id', () => {
         todos[0].completed = true;
         request(app).patch(`/todo/${id}`).expect(200).expect((res) => {
             expect(res.body.todo.text).toBe('updated').
-            expect(res.body.todo.completed).toBe(true).
-            expect(res.body.todo.completedAt).toBeA('number');
+                expect(res.body.todo.completed).toBe(true).
+                expect(res.body.todo.completedAt).toBeA('number');
         });
         done();
     });
@@ -40,7 +29,7 @@ describe('PATCH /todo:id', () => {
         todos[1].completed = false;
         request(app).patch(`/todo/${id}`).expect(200).expect((res) => {
             expect(res.body.todo.completed).toBe(false).
-            expect(res.body.todo.completedAt).toNotExist();
+                expect(res.body.todo.completedAt).toNotExist();
         });
         done();
     });
@@ -97,7 +86,7 @@ describe('GET /todo', () => {
 });
 
 describe('POST /todo', () => {
-    it('should create a new user in the database', (done) => {
+    it('should create a new todo in the database', (done) => {
         request(app).
             post('/todo').
             send({ text: 'test from mocha' })
@@ -117,7 +106,7 @@ describe('POST /todo', () => {
             });
     });
 
-    it('should not create a new user in the database', (done) => {
+    it('should not create a new todo in the database', (done) => {
         request(app).
             post('/todo').
             send({ text: '' })
@@ -135,3 +124,35 @@ describe('POST /todo', () => {
             });
     });
 });
+
+describe('POST /user', () => {
+    it('should create a new user in the database', (done) => {
+        request(app).
+            post('/user').
+            send({ email: 'luciano@gmail.com', password: 'jaojao' })
+            .expect(200).expect((res) => {
+                expect(res.body.email).toBe('luciano@gmail.com')
+            }).end((err, res) => {
+                if (err) {
+                    return done(err);
+                }
+
+                User.find().then((users) => {
+                    expect(users.length).toBe(3);
+                    expect(
+                        users[2].email).toBe('luciano@gmail.com');
+                    done();
+                }).catch((e) => done(e));
+            });
+    });
+
+    it('should not create a new user in the database because the email is already in use', (done) => {
+        request(app).
+            post('/user').
+            send({ email: 'sidharta.rezende@gmail.com', password: 'jaojao' })
+            .expect(400).end(done);
+    });
+});
+
+
+

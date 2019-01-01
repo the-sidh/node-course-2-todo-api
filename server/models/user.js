@@ -38,14 +38,14 @@ var userSchema = new mongoose.Schema({
 
 userSchema.pre('save', function (next) {
     var user = this;
-    if (user.isModified('password')){
+    if (user.isModified('password')) {
         bcrypt.genSalt(10, (err, salt) => {
             bcrypt.hash(user.password, salt, (err, hash) => {
-                user.password = hash;          
-                next();      
+                user.password = hash;
+                next();
             });
         });
-    }else{
+    } else {
         next();
     }
 })
@@ -86,6 +86,25 @@ userSchema.statics.findByToken = function (token) {
 
     return userfound;
 }
+
+userSchema.statics.findByCredentials = function (email, password) {
+    var User = this;
+    return User.findOne({ email }).then((userfound) => {
+        if (!userfound) {
+            Promise.reject();
+        } else {
+            return new Promise((resolve, reject) => {
+                bcrypt.compare(password, userfound.password, (err, res) => {
+                    if (res) {
+                        resolve(userfound);
+                    } else {
+                        reject();
+                    }
+                });
+            });
+        }
+    });
+};
 
 var User = mongoose.model('User', userSchema);
 
